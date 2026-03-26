@@ -150,7 +150,6 @@ select.form-input option{background:#fff;color:var(--ink)}
   ★ CONFIG — 填入你的值
 ════════════════════════════════ -->
 <script>
- ""
 const CONFIG = {
   LIFF_ID:  "2009555974-YLZhEGvf",
   GAS_URL:  "https://script.google.com/macros/s/AKfycbxGmcI3uF8H4IU_lULShNqI0xN4ntNrPBXfwdUrA1rA4x3H391i3uDLPFl63MTHy8vDLA/exec",
@@ -161,7 +160,7 @@ const CONFIG = {
 
 window.addEventListener('load', async function() {
   try 
-    // 
+    {   
     const response = await fetch('/api/config');
     const data = await response.json();
     
