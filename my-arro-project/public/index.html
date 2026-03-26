@@ -1,0 +1,830 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>優客智勤 ARRO</title>
+<style>
+:root{
+  /* ── 橘色系白底主題 ── */
+  --bg:#F4F7FA;
+  --card:#FFFFFF;
+  --card2:#F8FAFC;
+  --ink:#1E293B;
+  --sub:#64748B;
+  --hint:#94A3B8;
+  --accent:#FF6B35;
+  --accent-light:rgba(255,107,53,0.08);
+  --accent-mid:rgba(255,107,53,0.15);
+  --ok:#22C55E;
+  --ok-light:rgba(34,197,94,0.1);
+  --err:#EF4444;
+  --err-light:rgba(239,68,68,0.1);
+  --warn:#F59E0B;
+  --warn-light:rgba(245,158,11,0.1);
+  --border:#EEF1F5;
+  --shadow:0 4px 20px rgba(0,0,0,0.06);
+  --r12:12px;--r16:16px;--r20:20px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:-apple-system,'PingFang TC','Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)}
+body{min-height:100dvh;padding:0 0 max(32px,env(safe-area-inset-bottom))}
+
+.view{display:none;animation:fadeIn .3s ease}
+.view.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── 卡片 ── */
+.card{background:var(--card);border-radius:var(--r20);padding:24px;margin:0 16px 14px;border:1px solid var(--border);box-shadow:var(--shadow)}
+
+/* ── 頂部 Hero 區 ── */
+.hdr-bg{
+  background:linear-gradient(160deg,#FF6B35 0%,#E84A10 60%,#C73800 100%);
+  padding:env(safe-area-inset-top,16px) 24px 32px;
+  padding-top:max(env(safe-area-inset-top),16px);
+  margin-bottom:0;
+  position:relative;overflow:hidden;
+}
+.hdr-bg::before{content:'';position:absolute;top:-80px;right:-80px;width:260px;height:260px;background:radial-gradient(circle,rgba(255,255,255,.12),transparent 65%);pointer-events:none}
+.hdr-bg::after{content:'';position:absolute;bottom:-60px;left:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(0,0,0,.08),transparent 65%);pointer-events:none}
+.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;position:relative;z-index:1}
+.hdr-brand{font-size:11px;font-weight:800;letter-spacing:4px;color:rgba(255,255,255,.7);text-transform:uppercase}
+.avatar{width:68px;height:68px;border-radius:50%;margin:0 auto 12px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;background:rgba(255,255,255,.25);border:2.5px solid rgba(255,255,255,.4);box-shadow:0 0 0 4px rgba(255,255,255,.1);position:relative;z-index:1}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.hdr-name{text-align:center;font-size:20px;font-weight:800;color:#fff;margin-bottom:3px;position:relative;z-index:1}
+.hdr-role{text-align:center;font-size:12px;color:rgba(255,255,255,.7);margin-bottom:24px;position:relative;z-index:1}
+.clock{text-align:center;font-size:52px;font-weight:200;letter-spacing:-2px;color:#fff;line-height:1;margin-bottom:4px;font-variant-numeric:tabular-nums;position:relative;z-index:1}
+.clock-date{text-align:center;font-size:12px;color:rgba(255,255,255,.6);margin-bottom:28px;letter-spacing:.5px;position:relative;z-index:1}
+
+/* ── 打卡按鈕 ── */
+.btn-ci{width:calc(100% - 0px);padding:20px;border:none;border-radius:var(--r16);font-size:17px;font-weight:800;cursor:pointer;letter-spacing:.5px;display:flex;justify-content:center;align-items:center;gap:10px;transition:all .25s cubic-bezier(.25,.8,.25,1);position:relative;z-index:1}
+.btn-ci:active{transform:scale(.97)}
+.bci-ready{background:#fff;color:var(--accent);box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.bci-success{background:rgba(255,255,255,.9);color:var(--ok);box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.bci-loading{background:rgba(255,255,255,.2);color:rgba(255,255,255,.7);cursor:not-allowed;border:1.5px solid rgba(255,255,255,.25)}
+.bci-locked{background:rgba(255,255,255,.15);color:rgba(255,255,255,.5);cursor:not-allowed}
+
+/* ── Pill 狀態標籤 ── */
+.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px}
+.pill-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.pill-ok{background:rgba(255,255,255,.2);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.3)}
+.pill-warn{background:var(--warn-light);color:var(--warn);border:1px solid rgba(245,158,11,.2)}
+.pill-pending{background:var(--accent-light);color:var(--accent);border:1px solid var(--accent-mid)}
+.pill-err{background:var(--err-light);color:var(--err);border:1px solid rgba(239,68,68,.2)}
+
+/* ── 統計列 ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:0 16px;margin:16px 0}
+.stat-box{background:var(--card);border-radius:var(--r16);padding:16px 12px;text-align:center;border:1px solid var(--border);box-shadow:var(--shadow)}
+.stat-val{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;margin-bottom:4px;color:var(--accent)}
+.stat-lbl{font-size:10px;color:var(--hint);letter-spacing:.5px}
+/* skeleton loading */
+.stat-skel{height:24px;background:linear-gradient(90deg,#EEF1F5 25%,#F4F7FA 50%,#EEF1F5 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;margin-bottom:6px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── 區塊標題 ── */
+.sec-title{font-size:11px;font-weight:800;color:var(--hint);letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
+.sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+
+/* ── 歷史紀錄 ── */
+.hist-item{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border)}
+.hist-item:last-child{border:none}
+.hi-l{display:flex;flex-direction:column;gap:3px}
+.hi-time{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+.hi-date{font-size:11px;color:var(--hint)}
+.hi-tag{font-size:11px;font-weight:700;padding:5px 12px;border-radius:10px;letter-spacing:.3px}
+.hit-ok{background:var(--ok-light);color:var(--ok)}
+.hit-fail{background:var(--err-light);color:var(--err)}
+.hit-pending{background:var(--accent-light);color:var(--accent)}
+.hit-in{background:var(--ok-light);color:var(--ok)}
+.hit-out{background:var(--accent-light);color:var(--accent)}
+
+/* ── 模組卡片 ── */
+.modules-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0}
+.mod-card{background:var(--card);border-radius:var(--r16);padding:18px 14px;border:1.5px solid var(--border);cursor:pointer;transition:all .2s;text-align:center;box-shadow:var(--shadow)}
+.mod-card:active{transform:scale(.97);border-color:var(--accent);background:var(--accent-light)}
+.mod-card.locked{opacity:.5;cursor:not-allowed}
+.mod-card.locked:active{transform:none;border-color:var(--border);background:var(--card)}
+.mod-ico{font-size:22px;margin-bottom:8px}
+.mod-lbl{font-size:13px;font-weight:700;color:var(--ink)}
+.mod-sub{font-size:10px;color:var(--hint);margin-top:3px}
+
+/* ── 表單 ── */
+.form-group{margin-bottom:16px}
+.form-lbl{font-size:13px;font-weight:700;margin-bottom:8px;display:block;color:var(--ink)}
+.form-input{width:100%;padding:14px 16px;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r12);font-size:15px;color:var(--ink);font-family:inherit;outline:none;transition:border-color .2s;-webkit-appearance:none}
+.form-input:focus{border-color:var(--accent);background:#fff}
+.form-input::placeholder{color:var(--hint)}
+select.form-input option{background:#fff;color:var(--ink)}
+.form-hint{font-size:11px;color:var(--hint);margin-top:6px;line-height:1.5}
+.geo-box{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-top:6px;font-size:12px;line-height:1.5;display:none;color:var(--sub)}
+.boss-wrap{background:var(--accent-light);border:1.5px dashed rgba(255,107,53,.3);border-radius:var(--r16);padding:18px;margin-top:14px;display:none}
+.boss-hdr{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:max(24px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:999;transition:transform .3s cubic-bezier(.25,.8,.25,1);white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.2);max-width:88vw;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.ok{background:var(--ok)}
+#toast.err{background:var(--err)}
+
+/* ── 通用 ── */
+.loader{width:18px;height:18px;border:2.5px solid rgba(255,107,53,.25);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0}
+.loader-white{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:28px 0;color:var(--hint);font-size:14px}
+.spin-center{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;gap:12px;color:var(--hint);font-size:13px}
+.spin-big{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+
+/* ── DEBUG ── */
+#debugPanel{position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.92);color:#0f0;font-size:10px;font-family:monospace;padding:8px;max-height:180px;overflow-y:auto;z-index:9999;display:none}
+#debugPanel.show{display:block}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+<div id="debugPanel"></div>
+
+<!-- ════════════════════════════════
+  ★ CONFIG — 填入你的值
+════════════════════════════════ -->
+<script>
+ ""
+const CONFIG = {
+  LIFF_ID:  "2009555974-YLZhEGvf",
+  GAS_URL:  "https://script.google.com/macros/s/AKfycbxGmcI3uF8H4IU_lULShNqI0xN4ntNrPBXfwdUrA1rA4x3H391i3uDLPFl63MTHy8vDLA/exec",
+  N8N_URL:  "https://xeresbrothers.zeabur.app/webhook/kooperkit_line_checkin",
+  MAPS_KEY: "", 
+  DEBUG:    false,
+};
+
+window.addEventListener('load', async function() {
+  try 
+    // 
+    const response = await fetch('/api/config');
+    const data = await response.json();
+    
+    if (data.mapsApiKey) {
+      CONFIG.MAPS_KEY = data.mapsApiKey; 
+    }
+  } catch (e) {
+    console.error("無法從後端取得 Google Maps Key", e);
+  }
+
+  var s = document.createElement('script');
+  s.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js';
+  s.onload  = function(){ init(); };
+  s.onerror = function(){
+    show('main');
+    setBtn('locked','⚠ LIFF SDK 載入失敗，請重新整理');
+  };
+  document.head.appendChild(s);
+});
+</script>
+<!-- ════════════════════════════════ -->
+
+<!-- LOADING -->
+<div class="view active" id="v-loading">
+  <div class="spin-center">
+    <div class="spin-big"></div>
+    <span>優客智勤 ARRO</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="view" id="v-main">
+  <!-- 橘色頂部 Hero -->
+  <div class="hdr-bg">
+    <div class="hdr-top">
+      <div class="hdr-brand">ARRO · 優客智勤</div>
+      <div id="statusPill"></div>
+    </div>
+    <div class="avatar" id="avatarEl"></div>
+    <div class="hdr-name" id="userName">—</div>
+    <div class="hdr-role" id="userRole">—</div>
+    <div class="clock" id="clockEl">00:00</div>
+    <div class="clock-date" id="dateEl">—</div>
+    <button class="btn-ci bci-locked" id="checkinBtn" disabled onclick="triggerCheckin()">
+      🔒 驗證中
+    </button>
+  </div>
+
+  <!-- 統計列 skeleton → 真實資料 -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-box">
+      <div class="stat-skel" id="skel-days"></div>
+      <div class="stat-val" id="stat-days" style="display:none">—</div>
+      <div class="stat-lbl">本月出勤</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-skel" id="skel-hours"></div>
+      <div class="stat-val" id="stat-hours" style="display:none">—</div>
+      <div class="stat-lbl">累計工時</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-skel" id="skel-pay"></div>
+      <div class="stat-val" id="stat-pay" style="display:none">—</div>
+      <div class="stat-lbl">預估薪資</div>
+    </div>
+  </div>
+
+  <!-- 近期打卡紀錄 -->
+  <div class="card" id="histCard">
+    <div class="sec-hdr">
+      <div class="sec-title">近期紀錄</div>
+      <div id="histRefreshBtn" style="font-size:12px;color:var(--accent);font-weight:600;cursor:pointer" onclick="loadHistory()">重新整理</div>
+    </div>
+    <div id="histList"><div class="empty">載入中...</div></div>
+  </div>
+
+  <!-- 我的工具 -->
+  <div id="modulesSection" style="display:none;padding:0 16px">
+    <div class="sec-title" style="margin-bottom:12px">我的工具</div>
+    <div class="modules-row" id="modulesGrid"></div>
+  </div>
+  <div style="height:16px"></div>
+</div>
+
+<!-- REGISTER -->
+<div class="view" id="v-register">
+  <div style="background:linear-gradient(160deg,#FF6B35,#E84A10);padding:env(safe-area-inset-top,16px) 24px 28px;text-align:center">
+    <div style="font-size:36px;margin-bottom:10px">✍️</div>
+    <div style="font-size:19px;font-weight:800;color:#fff;margin-bottom:4px">申請加入系統</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.7)">填寫資料後等待負責人審核</div>
+  </div>
+  <div style="height:16px"></div>
+  <div class="card">
+    <div class="form-group">
+      <label class="form-lbl">真實姓名 *</label>
+      <input type="text" id="regName" class="form-input" placeholder="請填寫本名">
+    </div>
+    <div class="form-group">
+      <label class="form-lbl">聯絡電話 *</label>
+      <input type="tel" id="regPhone" class="form-input" placeholder="例：0912345678">
+    </div>
+    <div class="form-group">
+      <label class="form-lbl">所屬品牌 *</label>
+      <select id="regBrand" class="form-input" onchange="onBrandChange()">
+        <option value="">⏳ 載入中...</option>
+      </select>
+    </div>
+    <div class="boss-wrap" id="bossWrap">
+      <div class="boss-hdr">🏪 負責人建店資料</div>
+      <div class="form-group">
+        <label class="form-lbl">品牌／分店名稱 *</label>
+        <input type="text" id="customBrand" class="form-input" placeholder="例：優客早餐 · 林園店">
+      </div>
+      <div class="form-group">
+        <label class="form-lbl">店家完整地址 *</label>
+        <input type="text" id="storeAddr" class="form-input" placeholder="高雄市林園區中山路123號" onblur="geocode()">
+        <div class="geo-box" id="geoBox"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-lbl">允許打卡半徑（公尺）*</label>
+        <input type="number" id="allowDist" class="form-input" placeholder="建議：100" min="30" max="500">
+        <div class="form-hint">一般門市建議 80–150 公尺</div>
+      </div>
+      <input type="hidden" id="storeLat">
+      <input type="hidden" id="storeLng">
+    </div>
+    <button class="btn-ci" id="regBtn" onclick="submitReg()" style="margin-top:12px;background:linear-gradient(135deg,var(--accent),#E84A10);color:#fff;box-shadow:0 8px 24px rgba(255,107,53,.3)">
+      🚀 送出申請
+    </button>
+  </div>
+</div>
+
+<!-- PENDING -->
+<div class="view" id="v-pending">
+  <div style="background:linear-gradient(160deg,#FF6B35,#E84A10);padding:env(safe-area-inset-top,16px) 24px 40px;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">⏳</div>
+    <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px">申請審核中</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.75);line-height:1.7">您的申請正在等待負責人審核<br>審核通過後您將收到 LINE 通知</div>
+  </div>
+  <div style="height:16px"></div>
+  <div class="card">
+    <div class="sec-hdr"><div class="sec-title">您的資料</div></div>
+    <div id="pendingInfo"></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════
+// 全域狀態
+// ════════════════════════════════
+const G = {
+  userId:'', userName:'', role:'', brand:'', wage:0,
+  isProcessing:false, approved:false,
+};
+
+// ── Debug Logger ──────────────────────────────────────────
+function dbg(msg, data){
+  if(!CONFIG.DEBUG) return;
+  const panel = document.getElementById('debugPanel');
+  panel.classList.add('show');
+  const time = new Date().toLocaleTimeString();
+  const line = document.createElement('div');
+  line.textContent = '['+time+'] '+msg+(data !== undefined ? ' → '+JSON.stringify(data) : '');
+  panel.appendChild(line);
+  panel.scrollTop = panel.scrollHeight;
+  console.log('[ARRO] '+msg, data);
+}
+
+// ── 時鐘 ─────────────────────────────────────────────────
+function startClock(){
+  const pad = function(n){ return String(n).padStart(2,'0'); };
+  const days = ['日','一','二','三','四','五','六'];
+  const tick = function(){
+    const n = new Date();
+    document.getElementById('clockEl').textContent = pad(n.getHours())+':'+pad(n.getMinutes());
+    document.getElementById('dateEl').textContent  = n.getFullYear()+'.'+pad(n.getMonth()+1)+'.'+pad(n.getDate())+'  週'+days[n.getDay()];
+  };
+  tick(); setInterval(tick, 1000);
+}
+
+// ════════════════════════════════
+// INIT
+// ════════════════════════════════
+async function init(){
+  dbg('init start, LIFF_ID', CONFIG.LIFF_ID);
+
+  if(CONFIG.LIFF_ID === 'YOUR_LIFF_ID'){
+    show('main');
+    setBtn('locked','⚠ 請先填入 LIFF_ID');
+    return;
+  }
+  if(CONFIG.GAS_URL === 'YOUR_GAS_DEPLOYED_URL'){
+    show('main');
+    setBtn('locked','⚠ 請先填入 GAS_URL');
+    return;
+  }
+
+  try {
+    await liff.init({ liffId: CONFIG.LIFF_ID });
+    if(!liff.isLoggedIn()){ liff.login(); return; }
+
+    const p = await liff.getProfile();
+    G.userId   = p.userId;
+    G.userName = p.displayName;
+
+    const av = document.getElementById('avatarEl');
+    if(p.pictureUrl) av.innerHTML = '<img src="'+p.pictureUrl+'" alt="">';
+    else av.textContent = G.userName.charAt(0);
+    document.getElementById('userName').textContent = G.userName;
+
+    startClock();
+    await checkUser();
+
+  } catch(e){
+    dbg('init ERROR', e.message);
+    show('main');
+    if(e.message && e.message.includes('liff')){
+      setBtn('locked','⚠ LIFF 初始化失敗');
+    } else {
+      setBtn('locked','⚠ 請在 LINE App 內開啟');
+    }
+  }
+}
+
+// ════════════════════════════════
+// CHECK USER
+// ════════════════════════════════
+async function checkUser(){
+  dbg('checkUser', G.userId);
+  try {
+    const d = await gasGet({ action:'checkUser', userId: G.userId });
+    dbg('checkUser result', d);
+
+    if(!d.exist){
+      show('register');
+      loadBrands();
+      document.getElementById('regName').value = G.userName;
+      return;
+    }
+
+    G.role  = d.role  || '員工';
+    G.brand = d.brand || '';
+    G.wage  = d.wage  || 0;
+    document.getElementById('userRole').textContent = (d.brand||'')+(d.role ? ' · '+d.role : '');
+
+    if(d.status === '審核中'){
+      show('pending');
+      document.getElementById('pendingInfo').innerHTML =
+        '<div class="hist-item"><div class="hi-l"><div class="hi-time" style="color:var(--ink)">'+G.userName+'</div><div class="hi-date">姓名</div></div></div>'+
+        '<div class="hist-item"><div class="hi-l"><div class="hi-time" style="color:var(--ink)">'+(d.brand||'—')+'</div><div class="hi-date">品牌</div></div><span class="pill pill-pending"><span class="pill-dot"></span>審核中</span></div>';
+      return;
+    }
+
+    G.approved = true;
+    show('main');
+    setPill('ok','系統運作中');
+    setBtn('ready','📍 點擊打卡');
+    renderModules();
+    loadHistory();
+    loadStats();
+
+  } catch(e){
+    dbg('checkUser ERROR', e.message);
+    show('main');
+    showToast('⚠ 連線異常，請稍後重試','err');
+    setBtn('locked','⚠ 連線異常，請重新整理');
+  }
+}
+
+// ════════════════════════════════
+// MODULES
+// ════════════════════════════════
+const MODULE_DEFS = [
+  { ico:'📋', lbl:'打卡紀錄', sub:'查看歷史',  role:['員工','負責人'], action:'showHistory' },
+  { ico:'⏰', lbl:'本月工時', sub:'累積統計',  role:['員工','負責人'], action:'showStats'   },
+  { ico:'🗓', lbl:'排班查看', sub:'本週班表',  role:['員工','負責人'], action:'comingSoon'  },
+  { ico:'🏖', lbl:'請假申請', sub:'LINE 簽核', role:['員工','負責人'], action:'comingSoon'  },
+  { ico:'👥', lbl:'員工管理', sub:'名冊審核',  role:['負責人'],        action:'comingSoon'  },
+  { ico:'📊', lbl:'出勤報表', sub:'薪資月報',  role:['負責人'],        action:'comingSoon'  },
+];
+function renderModules(){
+  const section = document.getElementById('modulesSection');
+  const grid    = document.getElementById('modulesGrid');
+  section.style.display = 'block';
+  grid.innerHTML = MODULE_DEFS.map(function(m){
+    const ok = m.role.includes(G.role);
+    return '<div class="mod-card'+(ok?'':' locked')+'" onclick="'+(ok ? "modAction('"+m.action+"')" : "showToast('此功能即將開放','')") +'">'+
+      '<div class="mod-ico">'+m.ico+'</div>'+
+      '<div class="mod-lbl">'+m.lbl+(ok?'':'<span style="font-size:10px;margin-left:4px;color:var(--hint)">🔒</span>')+'</div>'+
+      '<div class="mod-sub">'+m.sub+'</div>'+
+      '</div>';
+  }).join('');
+}
+function modAction(a){
+  if(a==='comingSoon')   showToast('即將推出','');
+  else if(a==='showHistory') document.getElementById('histCard').scrollIntoView({behavior:'smooth'});
+  else if(a==='showStats')   document.getElementById('statsRow').scrollIntoView({behavior:'smooth'});
+}
+
+// ════════════════════════════════
+// CHECKIN
+// ════════════════════════════════
+async function triggerCheckin(){
+  if(G.isProcessing || !G.approved) return;
+  G.isProcessing = true;
+  setBtn('loading','⏳ 取得定位中...');
+
+  try {
+    const pos = await getGPS();
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    setBtn('loading','⏳ 傳送打卡中...');
+
+    const raw     = [G.userId, G.userName, lat, lng].join('|');
+    const payload = btoa(unescape(encodeURIComponent(raw)));
+
+    const res = await reqWithTimeout(CONFIG.N8N_URL, 15000, 'POST', { type:'checkin', payload });
+
+    if(res.ok){
+      setBtn('success','✓ 打卡成功！');
+      showToast('打卡成功 ✓','ok');
+      if(navigator.vibrate) navigator.vibrate([100,50,100]);
+      setTimeout(function(){
+        setBtn('ready','📍 點擊打卡');
+        G.isProcessing = false;
+        loadHistory();
+        loadStats();
+      }, 2000);
+    } else {
+      throw new Error('n8n HTTP '+res.status);
+    }
+
+  } catch(e){
+    dbg('checkin ERROR', e.message);
+    const m = e.message.includes('GEO') ? '定位失敗，請開啟位置權限'
+             : e.message.includes('abort') ? '打卡逾時，請重試'
+             : '打卡失敗：'+e.message;
+    showToast('⚠ '+m,'err');
+    setBtn('ready','📍 點擊打卡');
+    G.isProcessing = false;
+  }
+}
+
+// ── GPS ──────────────────────────────────────────────────
+function getGPS(){
+  return new Promise(function(res,rej){
+    if(!navigator.geolocation){ rej(new Error('GEO_UNSUPPORTED')); return; }
+    navigator.geolocation.getCurrentPosition(
+      res,
+      function(e){ rej(new Error('GEO_DENIED:'+e.code)); },
+      { enableHighAccuracy:true, timeout:12000, maximumAge:0 }
+    );
+  });
+}
+
+// ── HISTORY ──────────────────────────────────────────────
+async function loadHistory(){
+  var el = document.getElementById('histList');
+  el.innerHTML = '<div class="empty">載入中...</div>';
+  try {
+    // ★ limit 60，支援三頭班多天
+    var data = await gasGet({ action:'getHistory', userId: G.userId, limit: 60 });
+    if(!data || !data.length){ el.innerHTML='<div class="empty">尚無打卡紀錄</div>'; return; }
+
+    var byDate = {};
+    data.forEach(function(r){
+      var dateKey = (r.time || r.checkout || '').substring(0,10);
+      if(!byDate[dateKey]) byDate[dateKey] = [];
+      byDate[dateKey].push(r);
+    });
+
+    var dates = Object.keys(byDate).sort().reverse().slice(0,7);
+    var html = '';
+
+    dates.forEach(function(date){
+      var shifts = byDate[date].sort(function(a,b){
+        return (a.time||'').localeCompare(b.time||'');
+      });
+      var mm = date.substring(5,7), dd = date.substring(8,10);
+      var pairCount = shifts.length;
+
+      shifts.forEach(function(r, i){
+        // ★ 只取 HH:MM，去掉秒數
+        var inRaw  = r.time     ? (r.time.split(' ')[1]     || '--:--') : '--:--';
+        var outRaw = r.checkout ? (r.checkout.split(' ')[1] || '--:--') : '--:--';
+        var inT    = inRaw.length > 5  ? inRaw.substring(0,5)  : inRaw;
+        var outT   = outRaw.length > 5 ? outRaw.substring(0,5) : outRaw;
+
+        var hrs = 0;
+        if(parseFloat(r.hours||0) > 0){
+          hrs = parseFloat(r.hours);
+        } else if(r.time && r.checkout){
+          var ms = new Date(r.checkout) - new Date(r.time);
+          if(ms > 0) hrs = Math.round(ms / 3600000 * 10) / 10;
+        }
+
+        var isErr = r.result && r.result !== '正常';
+        var noOut = !r.checkout || outT === '--:--';
+
+        html += '<div class="hist-item">';
+        html += '<div class="hi-l">';
+        html += '<div class="hi-time">';
+        html += '<span style="color:'+(inT!=='--:--'?'var(--ok)':'var(--hint)')+'">'+inT+'</span>';
+        html += '<span style="color:var(--hint);margin:0 6px;font-size:12px;">→</span>';
+        html += '<span style="color:'+(outT!=='--:--'?'var(--accent)':'var(--hint)')+'">'+outT+'</span>';
+        if(hrs>0) html += '<span style="color:var(--sub);font-size:12px;margin-left:8px;">'+hrs.toFixed(1)+'h</span>';
+        html += '</div>';
+        html += '<div class="hi-date">'+mm+'/'+dd+(pairCount>1?' · 班次'+(i+1):'')+'</div>';
+        html += '</div>';
+        html += '<span class="hi-tag '+(isErr?'hit-fail':noOut?'hit-pending':'hit-ok')+'">';
+        html += (isErr?'異常':noOut?'打卡中':'正常');
+        html += '</span>';
+        html += '</div>';
+      });
+    });
+
+    el.innerHTML = html || '<div class="empty">尚無打卡紀錄</div>';
+
+  } catch(e){
+    el.innerHTML='<div class="empty">載入失敗，請點重新整理</div>';
+  }
+}
+
+// ── STATS ─────────────────────────────────────────────────
+async function loadStats(){
+  try {
+    const d = await gasGet({ action:'getMonthlyStats', userId: G.userId });
+    ['days','hours','pay'].forEach(function(k){
+      var skel = document.getElementById('skel-'+k);
+      var val  = document.getElementById('stat-'+k);
+      if(skel) skel.style.display = 'none';
+      if(val)  val.style.display  = 'block';
+    });
+    document.getElementById('stat-days').textContent  = (d.days  || 0)+'天';
+    document.getElementById('stat-hours').textContent = (d.hours || 0)+'h';
+    document.getElementById('stat-pay').textContent   = d.pay ? 'NT$'+d.pay : '—';
+  } catch(e){ dbg('loadStats ERROR', e.message); }
+}
+
+// ── BRANDS ───────────────────────────────────────────────
+async function loadBrands(){
+  const sel = document.getElementById('regBrand');
+  try {
+    const bs = await gasGet({ action:'getBrands' });
+    sel.innerHTML = '<option value="">— 選擇所屬品牌 —</option>'+
+      '<option value="__BOSS__">🏪 我是負責人（申請建店）</option>'+
+      bs.filter(function(b){ return b&&b!=='店家資訊'; }).map(function(b){ return '<option value="'+b+'">'+b+'</option>'; }).join('');
+  } catch(e){
+    sel.innerHTML='<option value="">❌ 無法載入，請重試</option>';
+  }
+}
+function onBrandChange(){
+  document.getElementById('bossWrap').style.display =
+    document.getElementById('regBrand').value==='__BOSS__' ? 'block' : 'none';
+}
+
+// ════════════════════════════════
+// ★ FIX 1：Geocoding 改用 Google Maps API 直接呼叫
+//    不再走 GAS proxy，前端直接打 Geocoding API
+// ════════════════════════════════
+async function geocode(){
+  const addr = document.getElementById('storeAddr').value.trim();
+  if(!addr) return;
+
+  if(CONFIG.MAPS_KEY === 'YOUR_MAPS_API_KEY'){
+    const box = document.getElementById('geoBox');
+    box.style.display='block';
+    box.style.color='var(--red)';
+    box.textContent='❌ 請先在 CONFIG.MAPS_KEY 填入 Google Maps API 金鑰';
+    return;
+  }
+
+  const box = document.getElementById('geoBox');
+  box.style.display='block';
+  box.style.color='var(--gold)';
+  box.textContent='⏳ 解析門牌座標中...';
+  dbg('geocode', addr);
+
+  try {
+    const url = 'https://maps.googleapis.com/maps/api/geocode/json'
+      +'?address='+encodeURIComponent(addr)
+      +'&key='+CONFIG.MAPS_KEY
+      +'&language=zh-TW';
+
+    const res  = await fetch(url);
+    const data = await res.json();
+    dbg('geocode result', data.status);
+
+    if(data.status === 'OK' && data.results && data.results.length > 0){
+      const loc = data.results[0].geometry.location;
+      const fmt = data.results[0].formatted_address || addr;
+      document.getElementById('storeLat').value = loc.lat;
+      document.getElementById('storeLng').value = loc.lng;
+      box.style.color='var(--green)';
+      box.textContent='✅ 座標鎖定：'+loc.lat.toFixed(6)+', '+loc.lng.toFixed(6)+'　'+fmt;
+    } else {
+      box.style.color='var(--red)';
+      box.textContent='❌ 找不到此地址（'+data.status+'），請確認後重試';
+    }
+  } catch(e){
+    dbg('geocode ERROR', e.message);
+    box.style.color='var(--red)';
+    box.textContent='⚠ 解析失敗：'+e.message;
+  }
+}
+
+// ── REGISTER ──────────────────────────────────────────────
+async function submitReg(){
+  const name  = document.getElementById('regName').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  let   brand = document.getElementById('regBrand').value;
+  if(!name||!phone||!brand){ showToast('請完整填寫所有欄位','err'); return; }
+
+  let role='員工', extra='';
+  if(brand==='__BOSS__'){
+    const cb   = document.getElementById('customBrand').value.trim();
+    const addr = document.getElementById('storeAddr').value.trim();
+    const lat  = document.getElementById('storeLat').value;
+    const lng  = document.getElementById('storeLng').value;
+    const dist = document.getElementById('allowDist').value.trim();
+    if(!cb)       { showToast('請填寫品牌名稱','err'); return; }
+    if(!lat||!lng){ showToast('請先解析地址座標','err'); return; }
+    if(!dist)     { showToast('請填寫允許打卡半徑','err'); return; }
+    role='負責人'; brand=cb;
+    extra='|'+addr+'|'+lat+'|'+lng+'|'+dist;
+  }
+
+  const btn=document.getElementById('regBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="loader"></span> 送出中...';
+
+  const n  = new Date();
+  const pad = function(x){ return String(x).padStart(2,'0'); };
+  const ds = ''+n.getFullYear()+pad(n.getMonth()+1)+pad(n.getDate());
+  const raw = ds+'_'+G.userId+'_'+phone+'|'+G.userId+'|'+brand+'|'+name+'|'+phone+'|'+role+'|0|審核中'+extra;
+  const payload = btoa(unescape(encodeURIComponent(raw)));
+  dbg('submitReg payload built');
+
+  try {
+    const res = await reqWithTimeout(CONFIG.N8N_URL, 15000, 'POST', { type:'register', payload });
+    dbg('register n8n response', res.status);
+    if(res.ok){
+      showToast('🎉 申請已送出，等待審核','ok');
+      setTimeout(function(){
+        if(liff.isInClient()){
+          // ★ FIX 2：申請完成後發送「我要申辦登入」而非「我要打卡」
+          liff.sendMessages([{type:'text',text:'我要申辦登入'}]).catch(function(){}).finally(function(){ liff.closeWindow(); });
+        }
+      }, 1500);
+    } else {
+      throw new Error('HTTP '+res.status);
+    }
+  } catch(e){
+    dbg('register ERROR', e.message);
+    // ★ FIX 3：500 錯誤更友善的提示
+    const msg = e.message.includes('500')
+      ? '伺服器錯誤(500)，請確認 n8n register 流程節點已正確連線'
+      : '送出失敗：'+e.message;
+    showToast(msg,'err');
+    btn.disabled=false;
+    btn.textContent='🚀 送出申請';
+  }
+}
+
+// ════════════════════════════════
+// UTILS
+// ════════════════════════════════
+
+// ── GAS 呼叫（JSONP 繞過 CORS）────────────────────────────
+let _jsonpCb = 0;
+function gasGet(params, ms){
+  ms = ms || 15000;
+  return new Promise(function(resolve, reject){
+    const cbName = '__gas_cb_'+(++_jsonpCb);
+    const tid = setTimeout(function(){
+      delete window[cbName];
+      const s = document.getElementById(cbName);
+      if(s) s.remove();
+      reject(new Error('GAS 逾時，請稍後重試'));
+    }, ms);
+
+    window[cbName] = function(data){
+      clearTimeout(tid);
+      delete window[cbName];
+      const s = document.getElementById(cbName);
+      if(s) s.remove();
+      resolve(data);
+    };
+
+    const qs = Object.entries(params).map(function(kv){
+      return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]);
+    }).join('&');
+    const url = CONFIG.GAS_URL+'?'+qs+'&callback='+cbName;
+
+    const script = document.createElement('script');
+    script.id  = cbName;
+    script.src = url;
+    script.onerror = function(){
+      clearTimeout(tid);
+      delete window[cbName];
+      script.remove();
+      reject(new Error('GAS 連線失敗'));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+// ── 一般 fetch（POST）────────────────────────────────────
+async function reqWithTimeout(url, ms, method, body){
+  ms = ms || 15000;
+  method = method || 'GET';
+  const ctrl = new AbortController();
+  const tid  = setTimeout(function(){ ctrl.abort(); }, ms);
+  const opts = { method: method, headers:{'Content-Type':'application/json'}, signal: ctrl.signal };
+  if(body) opts.body = JSON.stringify(body);
+  try {
+    const r = await fetch(url, opts);
+    clearTimeout(tid);
+    return r;
+  } catch(e) {
+    clearTimeout(tid);
+    if(e.name==='AbortError') throw new Error('逾時，請重試');
+    throw e;
+  }
+}
+
+function show(id){
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.getElementById('v-'+id).classList.add('active');
+}
+function setPill(type,txt){
+  const m = {ok:'pill-ok',warn:'pill-warn',pending:'pill-pending',err:'pill-err'};
+  document.getElementById('statusPill').innerHTML=
+    '<div class="pill '+(m[type]||'')+'"><span class="pill-dot"></span>'+txt+'</div>';
+}
+function setBtn(type,txt){
+  const btn=document.getElementById('checkinBtn');
+  const map={ready:'bci-ready',success:'bci-success',loading:'bci-loading',locked:'bci-locked'};
+  btn.className='btn-ci '+(map[type]||'bci-locked');
+  btn.disabled = (type!=='ready');
+  btn.innerHTML = type==='loading' ? '<span class="loader-white"></span> '+txt : txt;
+}
+let toastT;
+function showToast(msg,type){
+  type = type || '';
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=type; t.classList.add('show');
+  clearTimeout(toastT);
+  toastT=setTimeout(function(){ t.classList.remove('show'); },4000);
+}
+
+// ── LIFF SDK 動態載入（確保不會 liff is not defined）──
+window.addEventListener('load', function(){
+  var s = document.createElement('script');
+  s.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js';
+  s.onload  = function(){ init(); };
+  s.onerror = function(){
+    show('main');
+    setBtn('locked','⚠ LIFF SDK 載入失敗，請重新整理');
+  };
+  document.head.appendChild(s);
+});
+</script>
+</body>
+</html>
